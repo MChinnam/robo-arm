@@ -1,0 +1,159 @@
+<?xml version="1.0"?>
+<robot name="roboarm_gemma_6dof" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- Material Definitions -->
+  <material name="industrial_orange">
+    <color rgba="0.92 0.35 0.05 1.0"/>
+  </material>
+  <material name="dark_metallic">
+    <color rgba="0.12 0.16 0.22 1.0"/>
+  </material>
+  <material name="cyan_accent">
+    <color rgba="0.02 0.71 0.83 1.0"/>
+  </material>
+
+  <!-- World Fixed Link -->
+  <link name="world"/>
+
+  <joint name="world_fixed" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Base Link -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0.012" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.085" length="0.024"/>
+      </geometry>
+      <material name="dark_metallic"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.012" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.085" length="0.024"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="3.5"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.015"/>
+    </inertial>
+  </link>
+
+  <!-- Joint 1: Base Turntable Azimuth (Yaw) -->
+  <joint name="joint_1_base" type="revolute">
+    <parent link="base_link"/>
+    <child link="shoulder_link"/>
+    <origin xyz="0 0 0.024" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14159" upper="3.14159" effort="50.0" velocity="2.0"/>
+  </joint>
+
+  <!-- Shoulder Link -->
+  <link name="shoulder_link">
+    <visual>
+      <origin xyz="0 0 0.053" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.045" length="0.106"/>
+      </geometry>
+      <material name="industrial_orange"/>
+    </visual>
+    <inertial>
+      <mass value="2.8"/>
+      <inertia ixx="0.008" ixy="0" ixz="0" iyy="0.008" iyz="0" izz="0.005"/>
+    </inertial>
+  </link>
+
+  <!-- Joint 2: Shoulder Elevation (Pitch) -->
+  <joint name="joint_2_shoulder" type="revolute">
+    <parent link="shoulder_link"/>
+    <child link="upper_arm_link"/>
+    <origin xyz="0 0 0.106" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-1.047" upper="2.094" effort="80.0" velocity="1.5"/>
+  </joint>
+
+  <!-- Upper Arm Link -->
+  <link name="upper_arm_link">
+    <visual>
+      <origin xyz="0 0 0.095" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.035 0.040 0.190"/>
+      </geometry>
+      <material name="industrial_orange"/>
+    </visual>
+    <inertial>
+      <mass value="2.1"/>
+      <inertia ixx="0.006" ixy="0" ixz="0" iyy="0.006" iyz="0" izz="0.002"/>
+    </inertial>
+  </link>
+
+  <!-- Joint 3: Elbow Pitch -->
+  <joint name="joint_3_elbow" type="revolute">
+    <parent link="upper_arm_link"/>
+    <child link="forearm_link"/>
+    <origin xyz="0 0 0.190" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-2.618" upper="2.618" effort="40.0" velocity="2.0"/>
+  </joint>
+
+  <!-- Forearm Link -->
+  <link name="forearm_link">
+    <visual>
+      <origin xyz="0 0 0.080" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.028 0.032 0.160"/>
+      </geometry>
+      <material name="dark_metallic"/>
+    </visual>
+    <inertial>
+      <mass value="1.4"/>
+      <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <!-- Joint 4: Wrist Pitch -->
+  <joint name="joint_4_wrist_pitch" type="revolute">
+    <parent link="forearm_link"/>
+    <child link="wrist_link"/>
+    <origin xyz="0 0 0.160" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-1.919" upper="1.919" effort="20.0" velocity="2.5"/>
+  </joint>
+
+  <!-- Wrist Link -->
+  <link name="wrist_link">
+    <visual>
+      <origin xyz="0 0 0.015" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.022" length="0.030"/>
+      </geometry>
+      <material name="cyan_accent"/>
+    </visual>
+    <inertial>
+      <mass value="0.6"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <!-- Joint 5: Wrist Roll -->
+  <joint name="joint_5_wrist_roll" type="revolute">
+    <parent link="wrist_link"/>
+    <child link="tool_center_point"/>
+    <origin xyz="0 0 0.030" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-3.14159" upper="3.14159" effort="10.0" velocity="3.0"/>
+  </joint>
+
+  <!-- End-Effector Tool Center Point -->
+  <link name="tool_center_point">
+    <visual>
+      <origin xyz="0 0 0.032" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.054 0.024 0.065"/>
+      </geometry>
+      <material name="dark_metallic"/>
+    </visual>
+  </link>
+</robot>
