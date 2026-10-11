@@ -27,7 +27,9 @@ import { TelemetryHUD } from './components/TelemetryHUD';
 import { DownloadModal } from './components/DownloadModal';
 import { DocsModal } from './components/DocsModal';
 import { AICommandBar } from './components/AICommandBar';
+import { JoystickPendant } from './components/JoystickPendant';
 import { solveCommandOffline, CommandStep } from './utils/nlpCommands';
+import { Gamepad2, X } from 'lucide-react';
 
 const INITIAL_BLOCKS: PickableBlock[] = [
   { id: 'cube-red', x: -200, y: 15, z: 100, size: 24, color: '#ef4444', isHeld: false },
@@ -47,6 +49,7 @@ export default function App() {
   const [showReachEnvelope, setShowReachEnvelope] = useState<boolean>(false);
   const [showLaser, setShowLaser] = useState<boolean>(false);
   const [showGrid, setShowGrid] = useState<boolean>(true);
+  const [showFloatingPendant, setShowFloatingPendant] = useState<boolean>(false);
 
   // IK State
   const [ikTarget, setIkTarget] = useState<Vector3D>({ x: 160, y: 140, z: 120 });
@@ -358,6 +361,48 @@ export default function App() {
             ikTarget={activeMode === 'ik' ? ikTarget : undefined}
             collision={collision}
           />
+
+          {/* Floating Teach Pendant Joystick Quick Action */}
+          <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+            <button
+              onClick={() => setShowFloatingPendant(!showFloatingPendant)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold backdrop-blur-md border shadow-lg transition-all cursor-pointer ${
+                showFloatingPendant
+                  ? 'bg-orange-600 text-white border-orange-500 shadow-orange-950/60'
+                  : 'bg-slate-900/85 text-slate-300 hover:text-white border-slate-700/80 hover:bg-slate-850'
+              }`}
+            >
+              <Gamepad2 className="w-4 h-4 text-orange-400" />
+              <span>{showFloatingPendant ? 'Hide Joystick HUD' : 'Canvas Joysticks HUD'}</span>
+            </button>
+          </div>
+
+          {/* Floating Teach Pendant Joystick HUD Overlay */}
+          {showFloatingPendant && (
+            <div className="absolute top-16 right-4 z-30 w-80 md:w-96 max-h-[82vh] overflow-y-auto bg-slate-950/95 backdrop-blur-xl border border-slate-700/90 rounded-2xl p-4 shadow-2xl">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+                <div className="flex items-center gap-2 text-xs font-bold text-white">
+                  <Gamepad2 className="w-4 h-4 text-orange-400" />
+                  <span>Interactive Teach Pendant Joysticks</span>
+                </div>
+                <button
+                  onClick={() => setShowFloatingPendant(false)}
+                  className="text-slate-400 hover:text-white text-xs p-1 rounded hover:bg-slate-800 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <JoystickPendant
+                joints={joints}
+                onChangeJoints={setJoints}
+                ikTarget={ikTarget}
+                onChangeIKTarget={setIkTarget}
+                activeMode={activeMode}
+                onSelectMode={setActiveMode}
+                onApplyPreset={handleApplyPreset}
+              />
+            </div>
+          )}
 
           {/* Real-Time Telemetry Readout & Collision Warning */}
           <TelemetryHUD tcp={tcp} joints={joints} blocks={blocks} collision={collision} />

@@ -263,6 +263,98 @@
     .ai-input-row input:focus {
       border-color: var(--accent);
     }
+    .joystick-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+    }
+    .joystick-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .joystick-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .joystick-base {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #1e293b 0%, #090d16 100%);
+      border: 2px solid #334155;
+      position: relative;
+      touch-action: none;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.5);
+      user-select: none;
+    }
+    .joystick-base:active {
+      cursor: grabbing;
+      border-color: var(--accent);
+    }
+    .joystick-knob {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #475569, #0f172a);
+      border: 2px solid var(--accent);
+      position: absolute;
+      pointer-events: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.7), 0 0 10px rgba(249,115,22,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.05s ease-out;
+    }
+    .joystick-knob::after {
+      content: '';
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
+    .joystick-labels {
+      position: absolute;
+      font-size: 0.65rem;
+      font-family: monospace;
+      color: #64748b;
+      font-weight: bold;
+      pointer-events: none;
+    }
+    .label-top { top: 6px; }
+    .label-bottom { bottom: 6px; }
+    .label-left { left: 8px; }
+    .label-right { right: 8px; }
+    .paddle-btn {
+      flex: 1;
+      padding: 8px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #cbd5e1;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .paddle-btn:active {
+      background: var(--accent);
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -311,50 +403,102 @@
       <button class="tab-btn" onclick="setTab('auto')">Presets & Auto</button>
     </div>
 
-    <!-- FK Controls -->
+    <!-- FK Simulation Joysticks -->
     <div id="fk-tab" class="content-section">
-      <div class="control-group">
-        <div class="control-label"><span>Base Rotation (J1)</span><span id="j1-val">0°</span></div>
-        <input type="range" id="j1" min="-180" max="180" value="0" oninput="updateFK()">
-      </div>
-      <div class="control-group">
-        <div class="control-label"><span>Shoulder Pitch (J2)</span><span id="j2-val">30°</span></div>
-        <input type="range" id="j2" min="-60" max="120" value="30" oninput="updateFK()">
-      </div>
-      <div class="control-group">
-        <div class="control-label"><span>Elbow Pitch (J3)</span><span id="j3-val">-45°</span></div>
-        <input type="range" id="j3" min="-150" max="150" value="-45" oninput="updateFK()">
-      </div>
-      <div class="control-group">
-        <div class="control-label"><span>Wrist Pitch (J4)</span><span id="j4-val">15°</span></div>
-        <input type="range" id="j4" min="-110" max="110" value="15" oninput="updateFK()">
-      </div>
-      <div class="control-group">
-        <div class="control-label"><span>Wrist Roll (J5)</span><span id="j5-val">0°</span></div>
-        <input type="range" id="j5" min="-180" max="180" value="0" oninput="updateFK()">
-      </div>
-      <div class="control-group">
-        <div class="control-label"><span>Gripper Aperture</span><span id="grip-val">50%</span></div>
-        <input type="range" id="grip" min="0" max="100" value="50" oninput="updateFK()">
+      <div class="joystick-panel">
+        <!-- Stick 1: Base & Shoulder -->
+        <div class="joystick-wrapper">
+          <div class="joystick-title">Base & Shoulder (J1, J2)</div>
+          <div class="joystick-base" id="stick-fk-1">
+            <span class="joystick-labels label-top">J2 UP</span>
+            <span class="joystick-labels label-bottom">J2 DOWN</span>
+            <span class="joystick-labels label-left">J1 LEFT</span>
+            <span class="joystick-labels label-right">J1 RIGHT</span>
+            <div class="joystick-knob" id="knob-fk-1"></div>
+          </div>
+          <div style="font-size:0.7rem;font-family:monospace;color:#94a3b8;margin-top:4px;">
+            J1: <span id="j1-val" style="color:var(--accent);">0°</span> · J2: <span id="j2-val" style="color:var(--accent);">30°</span>
+          </div>
+        </div>
+
+        <!-- Stick 2: Elbow & Wrist Pitch -->
+        <div class="joystick-wrapper">
+          <div class="joystick-title">Elbow & Wrist Pitch (J3, J4)</div>
+          <div class="joystick-base" id="stick-fk-2">
+            <span class="joystick-labels label-top">J3 UP</span>
+            <span class="joystick-labels label-bottom">J3 DOWN</span>
+            <span class="joystick-labels label-left">J4 TILT-</span>
+            <span class="joystick-labels label-right">J4 TILT+</span>
+            <div class="joystick-knob" id="knob-fk-2"></div>
+          </div>
+          <div style="font-size:0.7rem;font-family:monospace;color:#94a3b8;margin-top:4px;">
+            J3: <span id="j3-val" style="color:var(--accent);">-45°</span> · J4: <span id="j4-val" style="color:var(--accent);">15°</span>
+          </div>
+        </div>
+
+        <!-- Stick 3: Wrist Roll & Gripper -->
+        <div class="joystick-wrapper">
+          <div class="joystick-title">Wrist Roll & Gripper (J5, Jaw)</div>
+          <div class="joystick-base" id="stick-fk-3">
+            <span class="joystick-labels label-top">OPEN</span>
+            <span class="joystick-labels label-bottom">CLAMP</span>
+            <span class="joystick-labels label-left">CCW</span>
+            <span class="joystick-labels label-right">CW</span>
+            <div class="joystick-knob" id="knob-fk-3"></div>
+          </div>
+          <div style="font-size:0.7rem;font-family:monospace;color:#94a3b8;margin-top:4px;">
+            J5: <span id="j5-val" style="color:var(--accent);">0°</span> · Grip: <span id="grip-val" style="color:var(--accent-cyan);">50%</span>
+          </div>
+        </div>
+
+        <!-- Quick Gripper Clamp Buttons -->
+        <div style="display:flex;gap:8px;width:100%;">
+          <button class="paddle-btn" onclick="jogGripper(-10)">Hold Clamp</button>
+          <button class="paddle-btn" onclick="jogGripper(10)">Hold Open</button>
+        </div>
       </div>
       <button class="btn btn-primary" onclick="resetPose()">Home Position</button>
     </div>
 
-    <!-- IK Controls -->
+    <!-- IK Cartesian Simulation Joysticks -->
     <div id="ik-tab" class="content-section" style="display:none;">
-      <div class="control-group">
-        <div class="control-label"><span>Target X (mm)</span><span id="ik-x-val">150</span></div>
-        <input type="range" id="ik-x" min="-300" max="300" value="150" oninput="updateIK()">
+      <div class="joystick-panel">
+        <!-- Stick 1: Planar X & Z -->
+        <div class="joystick-wrapper">
+          <div class="joystick-title">Planar Lateral & Depth (X, Z)</div>
+          <div class="joystick-base" id="stick-ik-1">
+            <span class="joystick-labels label-top">+Z FWD</span>
+            <span class="joystick-labels label-bottom">-Z BACK</span>
+            <span class="joystick-labels label-left">-X LEFT</span>
+            <span class="joystick-labels label-right">+X RIGHT</span>
+            <div class="joystick-knob" id="knob-ik-1"></div>
+          </div>
+          <div style="font-size:0.7rem;font-family:monospace;color:#94a3b8;margin-top:4px;">
+            X: <span id="ik-x-val" style="color:#22c55e;">150</span> mm · Z: <span id="ik-z-val" style="color:#22c55e;">100</span> mm
+          </div>
+        </div>
+
+        <!-- Stick 2: Elevation Y & Lateral Trim -->
+        <div class="joystick-wrapper">
+          <div class="joystick-title">Elevation & Height (Y)</div>
+          <div class="joystick-base" id="stick-ik-2">
+            <span class="joystick-labels label-top">+Y UP</span>
+            <span class="joystick-labels label-bottom">-Y DOWN</span>
+            <span class="joystick-labels label-left">-X FINE</span>
+            <span class="joystick-labels label-right">+X FINE</span>
+            <div class="joystick-knob" id="knob-ik-2"></div>
+          </div>
+          <div style="font-size:0.7rem;font-family:monospace;color:#94a3b8;margin-top:4px;">
+            Height Y: <span id="ik-y-val" style="color:#22c55e;">120</span> mm
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;width:100%;">
+          <button class="paddle-btn" onclick="applyPreset('ready')">Pallet Target</button>
+          <button class="paddle-btn" onclick="applyPreset('home')">Home Pose</button>
+        </div>
       </div>
-      <div class="control-group">
-        <div class="control-label"><span>Target Y (mm)</span><span id="ik-y-val">120</span></div>
-        <input type="range" id="ik-y" min="-300" max="300" value="120" oninput="updateIK()">
-      </div>
-      <div class="control-group">
-        <div class="control-label"><span>Target Z (mm)</span><span id="ik-z-val">100</span></div>
-        <input type="range" id="ik-z" min="10" max="350" value="100" oninput="updateIK()">
-      </div>
-      <button class="btn btn-primary" onclick="solveIKInstant()">Solve & Apply</button>
+      <button class="btn btn-primary" onclick="solveIKInstant()">Solve & Apply Target</button>
     </div>
 
     <!-- Presets & Automation -->
@@ -665,44 +809,88 @@
     }
 
     function updateFK() {
-      joints.j1 = parseFloat(document.getElementById('j1').value);
-      joints.j2 = parseFloat(document.getElementById('j2').value);
-      joints.j3 = parseFloat(document.getElementById('j3').value);
-      joints.j4 = parseFloat(document.getElementById('j4').value);
-      joints.j5 = parseFloat(document.getElementById('j5').value);
-      joints.grip = parseFloat(document.getElementById('grip').value);
-
-      document.getElementById('j1-val').innerText = joints.j1 + '°';
-      document.getElementById('j2-val').innerText = joints.j2 + '°';
-      document.getElementById('j3-val').innerText = joints.j3 + '°';
-      document.getElementById('j4-val').innerText = joints.j4 + '°';
-      document.getElementById('j5-val').innerText = joints.j5 + '°';
-      document.getElementById('grip-val').innerText = joints.grip + '%';
+      document.getElementById('j1-val').innerText = joints.j1.toFixed(1) + '°';
+      document.getElementById('j2-val').innerText = joints.j2.toFixed(1) + '°';
+      document.getElementById('j3-val').innerText = joints.j3.toFixed(1) + '°';
+      document.getElementById('j4-val').innerText = joints.j4.toFixed(1) + '°';
+      document.getElementById('j5-val').innerText = joints.j5.toFixed(1) + '°';
+      document.getElementById('grip-val').innerText = Math.round(joints.grip) + '%';
     }
 
     function resetPose() {
       joints = { j1: 0, j2: 30, j3: -45, j4: 15, j5: 0, grip: 50 };
-      document.getElementById('j1').value = 0;
-      document.getElementById('j2').value = 30;
-      document.getElementById('j3').value = -45;
-      document.getElementById('j4').value = 15;
-      document.getElementById('j5').value = 0;
-      document.getElementById('grip').value = 50;
       updateFK();
     }
 
-    // Inverse Kinematics (2-Link Geometric Solver on Plane + Base Yaw)
-    function solveIKInstant() {
-      const targetX = parseFloat(document.getElementById('ik-x').value);
-      const targetZ = parseFloat(document.getElementById('ik-y').value); // Map Y slider to Z space
-      const targetY = parseFloat(document.getElementById('ik-z').value);
+    function jogGripper(delta) {
+      joints.grip = Math.max(0, Math.min(100, joints.grip + delta));
+      updateFK();
+    }
 
-      // Base Angle J1
+    // Interactive Virtual Joystick System
+    function setupVirtualJoystick(baseId, knobId, onMove) {
+      const base = document.getElementById(baseId);
+      const knob = document.getElementById(knobId);
+      if (!base || !knob) return;
+
+      let isDown = false;
+      let animId = null;
+      let currX = 0, currY = 0;
+      const maxDist = 42;
+
+      function loop() {
+        if (isDown && (currX !== 0 || currY !== 0)) {
+          onMove(currX, currY);
+          animId = requestAnimationFrame(loop);
+        }
+      }
+
+      function handleMove(clientX, clientY) {
+        const rect = base.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        let dx = clientX - cx;
+        let dy = clientY - cy;
+        const dist = Math.hypot(dx, dy);
+        if (dist > maxDist) {
+          const angle = Math.atan2(dy, dx);
+          dx = Math.cos(angle) * maxDist;
+          dy = Math.sin(angle) * maxDist;
+        }
+        knob.style.transform = `translate(${dx}px, ${dy}px)`;
+        currX = dx / maxDist;
+        currY = -dy / maxDist;
+        if (!animId) {
+          animId = requestAnimationFrame(loop);
+        }
+      }
+
+      base.addEventListener('pointerdown', (e) => {
+        base.setPointerCapture(e.pointerId);
+        isDown = true;
+        handleMove(e.clientX, e.clientY);
+      });
+      base.addEventListener('pointermove', (e) => {
+        if (!isDown) return;
+        handleMove(e.clientX, e.clientY);
+      });
+      const onUp = (e) => {
+        if (!isDown) return;
+        try { base.releasePointerCapture(e.pointerId); } catch(err){}
+        isDown = false;
+        currX = 0; currY = 0;
+        knob.style.transform = 'translate(0px, 0px)';
+        if (animId) { cancelAnimationFrame(animId); animId = null; }
+      };
+      base.addEventListener('pointerup', onUp);
+      base.addEventListener('pointercancel', onUp);
+    }
+
+    let ikCoords = { x: 150, y: 120, z: 100 };
+    function solveIKTarget(targetX, targetZ, targetY) {
       const j1Deg = Math.atan2(targetX, targetZ) * 180 / Math.PI;
-
-      // Distance from shoulder in horizontal plane
       const r = Math.sqrt(targetX * targetX + targetZ * targetZ);
-      const dy = targetY - L1; // Height relative to shoulder
+      const dy = targetY - L1;
       const d = Math.sqrt(r * r + dy * dy);
 
       if (d > (L2 + L3 + L4)) {
@@ -714,7 +902,6 @@
         document.getElementById('hud-status').style.color = '#22c55e';
       }
 
-      // Law of Cosines for elbow angle
       const cosElbow = (d * d - L2 * L2 - L3 * L3) / (2 * L2 * L3);
       const clampedCos = Math.max(-1, Math.min(1, cosElbow));
       const elbowAngleRad = Math.acos(clampedCos);
@@ -727,20 +914,42 @@
       joints.j2 = shoulderAngleRad * 180 / Math.PI;
       joints.j3 = -(180 - elbowAngleRad * 180 / Math.PI);
       joints.j4 = -(joints.j2 + joints.j3);
-
-      document.getElementById('j1').value = joints.j1;
-      document.getElementById('j2').value = joints.j2;
-      document.getElementById('j3').value = joints.j3;
-      document.getElementById('j4').value = joints.j4;
       updateFK();
     }
 
-    function updateIK() {
-      document.getElementById('ik-x-val').innerText = document.getElementById('ik-x').value;
-      document.getElementById('ik-y-val').innerText = document.getElementById('ik-y').value;
-      document.getElementById('ik-z-val').innerText = document.getElementById('ik-z').value;
-      solveIKInstant();
+    function solveIKInstant() {
+      solveIKTarget(ikCoords.x, ikCoords.y, ikCoords.z);
     }
+
+    // Attach all Virtual Joysticks
+    setupVirtualJoystick('stick-fk-1', 'knob-fk-1', (x, y) => {
+      joints.j1 = Math.max(-180, Math.min(180, joints.j1 + x * 2.0));
+      joints.j2 = Math.max(-60, Math.min(120, joints.j2 + y * 2.0));
+      updateFK();
+    });
+    setupVirtualJoystick('stick-fk-2', 'knob-fk-2', (x, y) => {
+      joints.j4 = Math.max(-110, Math.min(110, joints.j4 + x * 2.0));
+      joints.j3 = Math.max(-150, Math.min(150, joints.j3 + y * 2.0));
+      updateFK();
+    });
+    setupVirtualJoystick('stick-fk-3', 'knob-fk-3', (x, y) => {
+      joints.j5 = Math.max(-180, Math.min(180, joints.j5 + x * 2.5));
+      joints.grip = Math.max(0, Math.min(100, joints.grip + y * 3.0));
+      updateFK();
+    });
+    setupVirtualJoystick('stick-ik-1', 'knob-ik-1', (x, y) => {
+      ikCoords.x = Math.max(-300, Math.min(300, ikCoords.x + x * 4.0));
+      ikCoords.z = Math.max(10, Math.min(350, ikCoords.z + y * 4.0));
+      document.getElementById('ik-x-val').innerText = Math.round(ikCoords.x);
+      document.getElementById('ik-z-val').innerText = Math.round(ikCoords.z);
+      solveIKTarget(ikCoords.x, ikCoords.y, ikCoords.z);
+    });
+    setupVirtualJoystick('stick-ik-2', 'knob-ik-2', (x, y) => {
+      ikCoords.y = Math.max(-300, Math.min(300, ikCoords.y + y * 4.0));
+      ikCoords.x = Math.max(-300, Math.min(300, ikCoords.x + x * 2.0));
+      document.getElementById('ik-y-val').innerText = Math.round(ikCoords.y);
+      solveIKTarget(ikCoords.x, ikCoords.y, ikCoords.z);
+    });
 
     // Presets
     const presets = {
@@ -754,12 +963,6 @@
       const p = presets[name];
       if (!p) return;
       joints = { ...p };
-      document.getElementById('j1').value = p.j1;
-      document.getElementById('j2').value = p.j2;
-      document.getElementById('j3').value = p.j3;
-      document.getElementById('j4').value = p.j4;
-      document.getElementById('j5').value = p.j5;
-      document.getElementById('grip').value = p.grip;
       updateFK();
     }
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   JointAngles,
   ControlMode,
@@ -9,6 +9,7 @@ import {
 } from '../types/robot';
 import { ROBOT_THEMES, PRESET_POSES } from '../utils/kinematics';
 import { RosPanel } from './RosPanel';
+import { JoystickPendant } from './JoystickPendant';
 import {
   Sliders,
   Crosshair,
@@ -22,6 +23,8 @@ import {
   Palette,
   Eye,
   Radio,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface ControlPanelProps {
@@ -89,6 +92,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   onExecuteCommand,
   isProcessingCommand,
 }) => {
+  const [showFkSliders, setShowFkSliders] = useState(false);
+  const [showIkSliders, setShowIkSliders] = useState(false);
+
   const updateSingleJoint = (key: keyof JointAngles, val: number) => {
     onChangeJoints((prev) => ({ ...prev, [key]: val }));
   };
@@ -100,7 +106,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         <div className="grid grid-cols-5 gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800">
           <button
             onClick={() => onSelectMode('fk')}
-            className={`py-1.5 text-xs font-medium rounded-md transition-all ${
+            className={`py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
               activeMode === 'fk'
                 ? 'bg-orange-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
@@ -110,7 +116,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           </button>
           <button
             onClick={() => onSelectMode('ik')}
-            className={`py-1.5 text-xs font-medium rounded-md transition-all ${
+            className={`py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
               activeMode === 'ik'
                 ? 'bg-orange-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
@@ -120,7 +126,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           </button>
           <button
             onClick={() => onSelectMode('sequence')}
-            className={`py-1.5 text-xs font-medium rounded-md transition-all ${
+            className={`py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
               activeMode === 'sequence'
                 ? 'bg-orange-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
@@ -130,7 +136,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           </button>
           <button
             onClick={() => onSelectMode('workcell')}
-            className={`py-1.5 text-xs font-medium rounded-md transition-all ${
+            className={`py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
               activeMode === 'workcell'
                 ? 'bg-orange-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
@@ -140,7 +146,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           </button>
           <button
             onClick={() => onSelectMode('ros')}
-            className={`py-1.5 text-xs font-medium rounded-md transition-all ${
+            className={`py-1.5 text-xs font-medium rounded-md transition-all cursor-pointer ${
               activeMode === 'ros'
                 ? 'bg-orange-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
@@ -153,258 +159,279 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
 
       {/* Main Tab Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-5 text-slate-200">
-        {/* FORWARD KINEMATICS */}
+        {/* FORWARD KINEMATICS: SIMULATION JOYSTICKS */}
         {activeMode === 'fk' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Joint Angles</h2>
-              <button
-                onClick={() => onApplyPreset('home')}
-                className="text-xs text-orange-400 hover:text-orange-300 font-medium flex items-center gap-1"
-              >
-                <RotateCcw className="w-3 h-3" /> Reset Home
-              </button>
-            </div>
+            {/* Primary Simulation Joysticks for All Joint Movements */}
+            <JoystickPendant
+              joints={joints}
+              onChangeJoints={onChangeJoints}
+              ikTarget={ikTarget}
+              onChangeIKTarget={onChangeIKTarget}
+              activeMode={activeMode}
+              onSelectMode={onSelectMode}
+              onApplyPreset={onApplyPreset}
+            />
 
-            {/* J1 Base Yaw */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-300 font-medium">J1 Base Yaw</span>
-                <span className="font-mono tabular-nums text-orange-400">{joints.j1.toFixed(1)}°</span>
-              </div>
-              <input
-                type="range"
-                min="-180"
-                max="180"
-                step="0.5"
-                value={joints.j1}
-                onChange={(e) => updateSingleJoint('j1', parseFloat(e.target.value))}
-                className="w-full accent-orange-500 cursor-pointer"
-              />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                <span>-180°</span>
-                <span>0°</span>
-                <span>+180°</span>
-              </div>
-            </div>
-
-            {/* J2 Shoulder Pitch */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-300 font-medium">J2 Shoulder Pitch</span>
-                <span className="font-mono tabular-nums text-orange-400">{joints.j2.toFixed(1)}°</span>
-              </div>
-              <input
-                type="range"
-                min="-60"
-                max="120"
-                step="0.5"
-                value={joints.j2}
-                onChange={(e) => updateSingleJoint('j2', parseFloat(e.target.value))}
-                className="w-full accent-orange-500 cursor-pointer"
-              />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                <span>-60°</span>
-                <span>+30°</span>
-                <span>+120°</span>
-              </div>
-            </div>
-
-            {/* J3 Elbow Pitch */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-300 font-medium">J3 Elbow Pitch</span>
-                <span className="font-mono tabular-nums text-orange-400">{joints.j3.toFixed(1)}°</span>
-              </div>
-              <input
-                type="range"
-                min="-150"
-                max="150"
-                step="0.5"
-                value={joints.j3}
-                onChange={(e) => updateSingleJoint('j3', parseFloat(e.target.value))}
-                className="w-full accent-orange-500 cursor-pointer"
-              />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                <span>-150°</span>
-                <span>0°</span>
-                <span>+150°</span>
-              </div>
-            </div>
-
-            {/* J4 Wrist Pitch */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-300 font-medium">J4 Wrist Pitch</span>
-                <span className="font-mono tabular-nums text-orange-400">{joints.j4.toFixed(1)}°</span>
-              </div>
-              <input
-                type="range"
-                min="-110"
-                max="110"
-                step="0.5"
-                value={joints.j4}
-                onChange={(e) => updateSingleJoint('j4', parseFloat(e.target.value))}
-                className="w-full accent-orange-500 cursor-pointer"
-              />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                <span>-110°</span>
-                <span>0°</span>
-                <span>+110°</span>
-              </div>
-            </div>
-
-            {/* J5 Wrist Roll */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-300 font-medium">J5 Wrist Roll</span>
-                <span className="font-mono tabular-nums text-orange-400">{joints.j5.toFixed(1)}°</span>
-              </div>
-              <input
-                type="range"
-                min="-180"
-                max="180"
-                step="0.5"
-                value={joints.j5}
-                onChange={(e) => updateSingleJoint('j5', parseFloat(e.target.value))}
-                className="w-full accent-orange-500 cursor-pointer"
-              />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                <span>-180°</span>
-                <span>0°</span>
-                <span>+180°</span>
-              </div>
-            </div>
-
-            {/* Gripper Aperture */}
-            <div className="space-y-1 pt-2 border-t border-slate-800">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-300 font-medium">Gripper Jaw Aperture</span>
-                <span className="font-mono tabular-nums text-cyan-400">{Math.round(joints.gripper)}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="1"
-                value={joints.gripper}
-                onChange={(e) => updateSingleJoint('gripper', parseFloat(e.target.value))}
-                className="w-full accent-cyan-500 cursor-pointer"
-              />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                <span>Clamped (0%)</span>
-                <span>Aperture (100%)</span>
-              </div>
-            </div>
-
-            {/* Preset Poses Quick Grid */}
-            <div className="pt-2">
+            {/* Preset Positions Quick Grid */}
+            <div className="pt-2 border-t border-slate-800">
               <span className="text-xs text-slate-400 font-medium block mb-2">Preset Positions</span>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(PRESET_POSES).map(([key, pose]) => (
                   <button
                     key={key}
                     onClick={() => onApplyPreset(key)}
-                    className="px-2.5 py-1.5 text-xs bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 rounded text-slate-200 transition-colors text-left truncate"
+                    className="px-2.5 py-1.5 text-xs bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 rounded text-slate-200 transition-colors text-left truncate cursor-pointer"
                   >
                     {pose.name}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Collapsible Precision Numeric Sliders */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowFkSliders(!showFkSliders)}
+                className="w-full py-1.5 px-2.5 flex items-center justify-between text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-950/60 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-orange-400" />
+                  <span>Precision Degrees Deck (Fine Sliders)</span>
+                </span>
+                {showFkSliders ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              {showFkSliders && (
+                <div className="mt-3 space-y-3 p-3 bg-slate-950/50 rounded-lg border border-slate-800/80">
+                  {/* J1 Base Yaw */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-medium">J1 Base Yaw</span>
+                      <span className="font-mono tabular-nums text-orange-400">{joints.j1.toFixed(1)}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-180"
+                      max="180"
+                      step="0.5"
+                      value={joints.j1}
+                      onChange={(e) => updateSingleJoint('j1', parseFloat(e.target.value))}
+                      className="w-full accent-orange-500 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* J2 Shoulder Pitch */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-medium">J2 Shoulder Pitch</span>
+                      <span className="font-mono tabular-nums text-orange-400">{joints.j2.toFixed(1)}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-60"
+                      max="120"
+                      step="0.5"
+                      value={joints.j2}
+                      onChange={(e) => updateSingleJoint('j2', parseFloat(e.target.value))}
+                      className="w-full accent-orange-500 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* J3 Elbow Pitch */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-medium">J3 Elbow Pitch</span>
+                      <span className="font-mono tabular-nums text-orange-400">{joints.j3.toFixed(1)}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-150"
+                      max="150"
+                      step="0.5"
+                      value={joints.j3}
+                      onChange={(e) => updateSingleJoint('j3', parseFloat(e.target.value))}
+                      className="w-full accent-orange-500 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* J4 Wrist Pitch */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-medium">J4 Wrist Pitch</span>
+                      <span className="font-mono tabular-nums text-orange-400">{joints.j4.toFixed(1)}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-110"
+                      max="110"
+                      step="0.5"
+                      value={joints.j4}
+                      onChange={(e) => updateSingleJoint('j4', parseFloat(e.target.value))}
+                      className="w-full accent-orange-500 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* J5 Wrist Roll */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-medium">J5 Wrist Roll</span>
+                      <span className="font-mono tabular-nums text-orange-400">{joints.j5.toFixed(1)}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-180"
+                      max="180"
+                      step="0.5"
+                      value={joints.j5}
+                      onChange={(e) => updateSingleJoint('j5', parseFloat(e.target.value))}
+                      className="w-full accent-orange-500 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Gripper Aperture */}
+                  <div className="space-y-1 pt-1 border-t border-slate-800">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-medium">Gripper Aperture</span>
+                      <span className="font-mono tabular-nums text-cyan-400">{Math.round(joints.gripper)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={joints.gripper}
+                      onChange={(e) => updateSingleJoint('gripper', parseFloat(e.target.value))}
+                      className="w-full accent-cyan-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* INVERSE KINEMATICS */}
+        {/* INVERSE KINEMATICS: CARTESIAN SIMULATION JOYSTICKS */}
         {activeMode === 'ik' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Cartesian Coordinates</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Cartesian Joysticks</h2>
               <span className={`text-xs font-medium ${ikStatus.solved ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {ikStatus.solved ? 'Target Solved' : 'Out of Reach'}
               </span>
             </div>
 
-            {/* Target X */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-300 font-medium">Target X (Lateral)</span>
-                <span className="font-mono tabular-nums text-emerald-400">{ikTarget.x.toFixed(0)} mm</span>
-              </div>
-              <input
-                type="range"
-                min="-340"
-                max="340"
-                step="2"
-                value={ikTarget.x}
-                onChange={(e) => onChangeIKTarget({ ...ikTarget, x: parseFloat(e.target.value) })}
-                className="w-full accent-emerald-500 cursor-pointer"
-              />
-            </div>
+            {/* Simulation Joysticks for Cartesian IK Movements */}
+            <JoystickPendant
+              joints={joints}
+              onChangeJoints={onChangeJoints}
+              ikTarget={ikTarget}
+              onChangeIKTarget={onChangeIKTarget}
+              activeMode={activeMode}
+              onSelectMode={onSelectMode}
+              onApplyPreset={onApplyPreset}
+            />
 
-            {/* Target Y */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-300 font-medium">Target Y (Elevation)</span>
-                <span className="font-mono tabular-nums text-emerald-400">{ikTarget.y.toFixed(0)} mm</span>
-              </div>
-              <input
-                type="range"
-                min="20"
-                max="400"
-                step="2"
-                value={ikTarget.y}
-                onChange={(e) => onChangeIKTarget({ ...ikTarget, y: parseFloat(e.target.value) })}
-                className="w-full accent-emerald-500 cursor-pointer"
-              />
-            </div>
-
-            {/* Target Z */}
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-300 font-medium">Target Z (Depth)</span>
-                <span className="font-mono tabular-nums text-emerald-400">{ikTarget.z.toFixed(0)} mm</span>
-              </div>
-              <input
-                type="range"
-                min="-340"
-                max="340"
-                step="2"
-                value={ikTarget.z}
-                onChange={(e) => onChangeIKTarget({ ...ikTarget, z: parseFloat(e.target.value) })}
-                className="w-full accent-emerald-500 cursor-pointer"
-              />
-            </div>
-
-            {/* Quick Target Presets */}
+            {/* Quick Workspace Targets */}
             <div className="pt-2 border-t border-slate-800">
               <span className="text-xs text-slate-400 font-medium block mb-2">Workspace Targets</span>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => onChangeIKTarget({ x: -200, y: 35, z: 100 })}
-                  className="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-200 transition-colors"
+                  className="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-200 transition-colors cursor-pointer"
                 >
                   Intake Pallet
                 </button>
                 <button
                   onClick={() => onChangeIKTarget({ x: 200, y: 35, z: 100 })}
-                  className="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-200 transition-colors"
+                  className="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-200 transition-colors cursor-pointer"
                 >
                   Outtake Pallet
                 </button>
                 <button
                   onClick={() => onChangeIKTarget({ x: 0, y: 150, z: 220 })}
-                  className="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-200 transition-colors"
+                  className="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-200 transition-colors cursor-pointer"
                 >
                   Center High
                 </button>
                 <button
                   onClick={() => onChangeIKTarget({ x: 0, y: 35, z: 240 })}
-                  className="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-200 transition-colors"
+                  className="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-200 transition-colors cursor-pointer"
                 >
                   Center Table
                 </button>
               </div>
+            </div>
+
+            {/* Collapsible Precision Cartesian Sliders */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowIkSliders(!showIkSliders)}
+                className="w-full py-1.5 px-2.5 flex items-center justify-between text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-950/60 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Precision Cartesian Sliders (Exact mm)</span>
+                </span>
+                {showIkSliders ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              {showIkSliders && (
+                <div className="mt-3 space-y-3 p-3 bg-slate-950/50 rounded-lg border border-slate-800/80">
+                  {/* Target X */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-medium">Target X (Lateral)</span>
+                      <span className="font-mono tabular-nums text-emerald-400">{ikTarget.x.toFixed(0)} mm</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-340"
+                      max="340"
+                      step="2"
+                      value={ikTarget.x}
+                      onChange={(e) => onChangeIKTarget({ ...ikTarget, x: parseFloat(e.target.value) })}
+                      className="w-full accent-emerald-500 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Target Y */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-medium">Target Y (Elevation)</span>
+                      <span className="font-mono tabular-nums text-emerald-400">{ikTarget.y.toFixed(0)} mm</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="20"
+                      max="400"
+                      step="2"
+                      value={ikTarget.y}
+                      onChange={(e) => onChangeIKTarget({ ...ikTarget, y: parseFloat(e.target.value) })}
+                      className="w-full accent-emerald-500 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Target Z */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-medium">Target Z (Depth)</span>
+                      <span className="font-mono tabular-nums text-emerald-400">{ikTarget.z.toFixed(0)} mm</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-340"
+                      max="340"
+                      step="2"
+                      value={ikTarget.z}
+                      onChange={(e) => onChangeIKTarget({ ...ikTarget, z: parseFloat(e.target.value) })}
+                      className="w-full accent-emerald-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {!ikStatus.solved && ikStatus.errorMsg && (
